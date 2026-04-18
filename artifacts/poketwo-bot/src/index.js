@@ -161,7 +161,10 @@ client.on("messageCreate", async (message) => {
     || message.embeds?.[0]?.title
     || message.embeds?.[0]?.description
     || "";
-
+function extractPokemonName(content) {
+  const match = content.match(/That's \*\*(.+?)\*\*/i);
+  return match ? match[1].trim() : null;
+}
   const pokemonName = extractPokemonName(contentToCheck);
   if (!pokemonName) {
     console.log(`[DEBUG] Could not extract name from: "${contentToCheck}"`);
