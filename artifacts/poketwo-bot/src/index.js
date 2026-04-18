@@ -6,12 +6,25 @@ const MESSAGE_CHANNEL_ID = process.env.MESSAGE_CHANNEL_ID;
 const NAMING_BOT_ID = process.env.NAMING_BOT_ID;
 const POKETWO_BOT_ID = "716390085896962058";
 
+const WAKE_COMMAND = "quaxly wake";
+
 if (!DISCORD_TOKEN || !POKETWO_CHANNEL_ID || !MESSAGE_CHANNEL_ID || !NAMING_BOT_ID) {
   console.error(
     "[ERROR] Missing required environment variables. Need: DISCORD_TOKEN, POKETWO_CHANNEL_ID, MESSAGE_CHANNEL_ID, NAMING_BOT_ID"
   );
   process.exit(1);
 }
+
+const CAPTCHA_KEYWORDS = [
+  "verify.poketwo.net",
+  "human verification",
+  "please verify",
+  "you have been flagged",
+  "suspicious activity",
+  "complete the captcha",
+  "verify that you are human",
+  "banned",
+];
 
 const RANDOM_PREFIXES = [
   "hey anyone here",
@@ -36,6 +49,9 @@ const RANDOM_PREFIXES = [
   "keeping it real out here",
 ];
 
+let sleeping = false;
+let messageTimer = null;
+
 function getRandomMessage() {
   const prefix = RANDOM_PREFIXES[Math.floor(Math.random() * RANDOM_PREFIXES.length)];
   return `${prefix} made by quaxly`;
@@ -53,6 +69,29 @@ function extractPokemonName(content) {
   return null;
 }
 
+function isCaptchaMessage(content) {
+  const lower = content.toLowerCase();
+  return CAPTCHA_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
+function goToSleep() {
+  if (sleeping) return;
+  sleeping = true;
+  if (messageTimer) {
+    clearTimeout(messageTimer);
+    messageTimer = null;
+  }
+  console.log("[CAPTCHA] Human verification detected! Bot is now SLEEPING.");
+  console.log(`[CAPTCHA] Send "${WAKE_COMMAND}" in any channel to reactivate after completing captcha.`);
+}
+
+function wakeUp() {
+  if (!sleeping) return;
+  sleeping = false;
+  console.log("[WAKE] Bot reactivated! Resuming catches and messages.");
+  scheduleRandomMessage();
+}
+
 const client = new Client({ checkUpdate: false });
 
 client.on("ready", () => {
@@ -60,13 +99,18 @@ client.on("ready", () => {
   console.log(`[INFO] Watching for spawns in channel: ${POKETWO_CHANNEL_ID}`);
   console.log(`[INFO] Sending messages in channel: ${MESSAGE_CHANNEL_ID}`);
   console.log(`[INFO] Listening for naming bot: ${NAMING_BOT_ID}`);
+  console.log(`[INFO] Wake command: "${WAKE_COMMAND}"`);
 
   scheduleRandomMessage();
 });
 
 function scheduleRandomMessage() {
+  if (sleeping) return;
+
   const delay = randomDelay(3000, 4000);
-  setTimeout(async () => {
+  messageTimer = setTimeout(async () => {
+    if (sleeping) return;
+
     try {
       const channel = await client.channels.fetch(MESSAGE_CHANNEL_ID);
       if (channel && channel.isText()) {
@@ -77,11 +121,26 @@ function scheduleRandomMessage() {
     } catch (err) {
       console.error(`[ERROR] Failed to send random message: ${err.message}`);
     }
+
     scheduleRandomMessage();
   }, delay);
 }
 
 client.on("messageCreate", async (message) => {
+  if (message.author.id === client.user.id) {
+    if (message.content.toLowerCase() === WAKE_COMMAND) {
+      wakeUp();
+    }
+    return;
+  }
+
+  if (message.author.id === POKETWO_BOT_ID && isCaptchaMessage(message.content)) {
+    goToSleep();
+    return;
+  }
+
+  if (sleeping) return;
+
   if (message.author.id !== NAMING_BOT_ID) return;
   if (message.channel.id !== POKETWO_CHANNEL_ID) return;
 
@@ -92,6 +151,7 @@ client.on("messageCreate", async (message) => {
 
   const catchDelay = randomDelay(500, 1500);
   setTimeout(async () => {
+    if (sleeping) return;
     try {
       await message.channel.send(`<@${POKETWO_BOT_ID}> catch ${pokemonName}`);
       console.log(`[CATCH] Sent catch command for: ${pokemonName}`);
