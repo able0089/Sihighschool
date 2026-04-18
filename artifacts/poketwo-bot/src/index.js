@@ -150,10 +150,8 @@ client.on("messageCreate", async (message) => {
 
   if (sleeping) return;
 
-  if (message.author.id === NAMING_BOT_ID) {
-    const embedTitle = message.embeds?.[0]?.title || "";
-    const embedDesc = message.embeds?.[0]?.description || "";
-    console.log(`[DEBUG] Naming bot msg | channel: ${message.channel.id} | content: "${message.content}" | embedTitle: "${embedTitle}" | embedDesc: "${embedDesc}"`);
+  if (message.channel.id === POKETWO_CHANNEL_ID) {
+    console.log(`[DEBUG] Message in pokemon channel | author: ${message.author.id} (${message.author.username}) | content: "${message.content}"`);
   }
 
   if (message.author.id !== NAMING_BOT_ID) return;
