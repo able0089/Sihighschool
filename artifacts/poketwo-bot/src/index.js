@@ -150,11 +150,25 @@ client.on("messageCreate", async (message) => {
 
   if (sleeping) return;
 
+  if (message.author.id === NAMING_BOT_ID) {
+    const embedTitle = message.embeds?.[0]?.title || "";
+    const embedDesc = message.embeds?.[0]?.description || "";
+    console.log(`[DEBUG] Naming bot msg | channel: ${message.channel.id} | content: "${message.content}" | embedTitle: "${embedTitle}" | embedDesc: "${embedDesc}"`);
+  }
+
   if (message.author.id !== NAMING_BOT_ID) return;
   if (message.channel.id !== POKETWO_CHANNEL_ID) return;
 
-  const pokemonName = extractPokemonName(message.content);
-  if (!pokemonName) return;
+  const contentToCheck = message.content
+    || message.embeds?.[0]?.title
+    || message.embeds?.[0]?.description
+    || "";
+
+  const pokemonName = extractPokemonName(contentToCheck);
+  if (!pokemonName) {
+    console.log(`[DEBUG] Could not extract name from: "${contentToCheck}"`);
+    return;
+  }
 
   console.log(`[SPAWN] Naming bot identified: ${pokemonName}`);
 
