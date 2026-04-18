@@ -8,10 +8,19 @@ const POKETWO_BOT_ID = "716390085896962058";
 
 const WAKE_COMMAND = "quaxly wake";
 
-if (!DISCORD_TOKEN || !POKETWO_CHANNEL_ID || !MESSAGE_CHANNEL_ID || !NAMING_BOT_ID) {
-  console.error(
-    "[ERROR] Missing required environment variables. Need: DISCORD_TOKEN, POKETWO_CHANNEL_ID, MESSAGE_CHANNEL_ID, NAMING_BOT_ID"
-  );
+const missing = [];
+if (!DISCORD_TOKEN) missing.push("DISCORD_TOKEN");
+if (!POKETWO_CHANNEL_ID) missing.push("POKETWO_CHANNEL_ID");
+if (!MESSAGE_CHANNEL_ID) missing.push("MESSAGE_CHANNEL_ID");
+if (!NAMING_BOT_ID) missing.push("NAMING_BOT_ID");
+
+console.log("[INFO] DISCORD_TOKEN set:", !!DISCORD_TOKEN);
+console.log("[INFO] POKETWO_CHANNEL_ID set:", !!POKETWO_CHANNEL_ID);
+console.log("[INFO] MESSAGE_CHANNEL_ID set:", !!MESSAGE_CHANNEL_ID);
+console.log("[INFO] NAMING_BOT_ID set:", !!NAMING_BOT_ID);
+
+if (missing.length > 0) {
+  console.error("[ERROR] Missing environment variables:", missing.join(", "));
   process.exit(1);
 }
 
